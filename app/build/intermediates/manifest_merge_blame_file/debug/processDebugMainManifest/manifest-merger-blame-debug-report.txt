@@ -1,0 +1,44 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.sarrai.app"
+4    android:versionCode="1"
+5    android:versionName="1.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="29"
+9        android:targetSdkVersion="35" />
+10
+11    <application
+11-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:108-471
+12        android:debuggable="true"
+13        android:extractNativeLibs="false"
+14        android:label="SARRAI"
+14-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:153-175
+15        android:theme="@style/AppTheme" >
+15-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:121-152
+16        <activity
+16-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:176-242
+17            android:name="com.sarrai.app.ChatActivity"
+17-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:186-214
+18            android:exported="false" />
+18-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:215-239
+19        <activity
+19-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:242-457
+20            android:name="com.sarrai.app.MainActivity"
+20-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:252-280
+21            android:exported="true" >
+21-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:281-304
+22            <intent-filter>
+22-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:305-446
+23                <action android:name="android.intent.action.MAIN" />
+23-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:320-371
+23-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:328-369
+24
+25                <category android:name="android.intent.category.LAUNCHER" />
+25-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:371-430
+25-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:381-428
+26            </intent-filter>
+27        </activity>
+28    </application>
+29
+30</manifest>

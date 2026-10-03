@@ -1,0 +1,3 @@
+C:/SARRAI/app/.cxx/Debug/162k275h/arm64-v8a/CMakeFiles/sarrai.dir
+C:/SARRAI/app/.cxx/Debug/162k275h/arm64-v8a/CMakeFiles/edit_cache.dir
+C:/SARRAI/app/.cxx/Debug/162k275h/arm64-v8a/CMakeFiles/rebuild_cache.dir

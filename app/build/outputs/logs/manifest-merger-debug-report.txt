@@ -1,0 +1,53 @@
+-- Merging decision tree log ---
+manifest
+ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:39-482
+INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:39-482
+INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:39-482
+INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:39-482
+	package
+		INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml
+	android:versionName
+		INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml
+	android:versionCode
+		INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml
+	xmlns:android
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:49-107
+application
+ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:108-471
+INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:108-471
+	android:extractNativeLibs
+		INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml
+	android:label
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:153-175
+	android:theme
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:121-152
+activity#com.sarrai.app.ChatActivity
+ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:176-242
+	android:exported
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:215-239
+	android:name
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:186-214
+activity#com.sarrai.app.MainActivity
+ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:242-457
+	android:exported
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:281-304
+	android:name
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:252-280
+intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
+ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:305-446
+action#android.intent.action.MAIN
+ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:320-371
+	android:name
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:328-369
+category#android.intent.category.LAUNCHER
+ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:371-430
+	android:name
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:381-428
+uses-sdk
+INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml
+INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml

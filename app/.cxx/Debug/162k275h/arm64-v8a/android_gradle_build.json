@@ -1,0 +1,43 @@
+{
+  "buildFiles": [
+    "C:\\SARRAI\\app\\src\\main\\cpp\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\Android\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "C:\\SARRAI\\app\\.cxx\\Debug\\162k275h\\arm64-v8a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\Android\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "C:\\SARRAI\\app\\.cxx\\Debug\\162k275h\\arm64-v8a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "sarrai::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "arm64-v8a",
+      "artifactName": "sarrai",
+      "output": "C:\\SARRAI\\app\\build\\intermediates\\cxx\\Debug\\162k275h\\obj\\arm64-v8a\\libsarrai.so",
+      "runtimeFiles": [
+        "C:\\SARRAI\\app\\src\\main\\jniLibs\\arm64-v8a\\libllama.so",
+        "C:\\SARRAI\\app\\src\\main\\jniLibs\\arm64-v8a\\libggml.so",
+        "C:\\SARRAI\\app\\src\\main\\jniLibs\\arm64-v8a\\libggml-cpu.so",
+        "C:\\SARRAI\\app\\src\\main\\jniLibs\\arm64-v8a\\libggml-base.so"
+      ]
+    }
+  },
+  "toolchains": {
+    "toolchain": {
+      "cCompilerExecutable": "C:\\Android\\ndk\\27.0.12077973\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang.exe",
+      "cppCompilerExecutable": "C:\\Android\\ndk\\27.0.12077973\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe"
+    }
+  },
+  "cFileExtensions": [],
+  "cppFileExtensions": [
+    "cpp"
+  ]
+}

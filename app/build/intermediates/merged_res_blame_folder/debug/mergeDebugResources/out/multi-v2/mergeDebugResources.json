@@ -1,0 +1,26 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.sarrai.app-debug-4:/values_values.arsc.flat",
+            "map": [
+                {
+                    "source": "C:\\SARRAI\\app\\src\\main\\res\\values\\styles.xml",
+                    "from": {
+                        "startLines": "0",
+                        "startColumns": "49",
+                        "startOffsets": "49",
+                        "endColumns": "324",
+                        "endOffsets": "324"
+                    },
+                    "to": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "279",
+                        "endOffsets": "330"
+                    }
+                }
+            ]
+        }
+    ]
+}

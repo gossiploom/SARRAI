@@ -1,0 +1,12 @@
+[
+{
+  "directory": "C:/SARRAI/app/.cxx/Debug/162k275h/arm64-v8a",
+  "command": "C:\\Android\\ndk\\27.0.12077973\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe --target=aarch64-none-linux-android29 --sysroot=C:/Android/ndk/27.0.12077973/toolchains/llvm/prebuilt/windows-x86_64/sysroot -Dsarrai_EXPORTS -IC:/SARRAI/llama.cpp/include -IC:/SARRAI/llama.cpp/ggml/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -o CMakeFiles\\sarrai.dir\\sarrai_jni.cpp.o -c C:\\SARRAI\\app\\src\\main\\cpp\\sarrai_jni.cpp",
+  "file": "C:\\SARRAI\\app\\src\\main\\cpp\\sarrai_jni.cpp"
+},
+{
+  "directory": "C:/SARRAI/app/.cxx/Debug/162k275h/arm64-v8a",
+  "command": "C:\\Android\\ndk\\27.0.12077973\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe --target=aarch64-none-linux-android29 --sysroot=C:/Android/ndk/27.0.12077973/toolchains/llvm/prebuilt/windows-x86_64/sysroot -Dsarrai_EXPORTS -IC:/SARRAI/llama.cpp/include -IC:/SARRAI/llama.cpp/ggml/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -o CMakeFiles\\sarrai.dir\\sarrai_text_engine.cpp.o -c C:\\SARRAI\\app\\src\\main\\cpp\\sarrai_text_engine.cpp",
+  "file": "C:\\SARRAI\\app\\src\\main\\cpp\\sarrai_text_engine.cpp"
+}
+]

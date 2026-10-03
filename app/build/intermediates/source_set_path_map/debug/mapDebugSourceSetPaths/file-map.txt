@@ -1,0 +1,8 @@
+com.sarrai.app-pngs-0 C:\SARRAI\app\build\generated\res\pngs\debug
+com.sarrai.app-resValues-1 C:\SARRAI\app\build\generated\res\resValues\debug
+com.sarrai.app-updated_navigation_xml-2 C:\SARRAI\app\build\generated\updated_navigation_xml\debug
+com.sarrai.app-packageDebugResources-3 C:\SARRAI\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.sarrai.app-packageDebugResources-4 C:\SARRAI\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.sarrai.app-debug-5 C:\SARRAI\app\build\intermediates\merged_res\debug\mergeDebugResources
+com.sarrai.app-debug-6 C:\SARRAI\app\src\debug\res
+com.sarrai.app-main-7 C:\SARRAI\app\src\main\res

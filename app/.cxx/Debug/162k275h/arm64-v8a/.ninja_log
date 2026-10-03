@@ -1,0 +1,17 @@
+# ninja log v5
+16	1732	8122364672740923	CMakeFiles/sarrai.dir/sarrai_jni.cpp.o	d272741507d6fcb
+1734	1909	8122364674737141	C:/SARRAI/app/build/intermediates/cxx/Debug/162k275h/obj/arm64-v8a/libsarrai.so	2d84f7eff82ff0ad
+15	2313	8122402102250513	CMakeFiles/sarrai.dir/sarrai_text_engine.cpp.o	31862f05120b2916
+2314	2533	8122402104593855	C:/SARRAI/app/build/intermediates/cxx/Debug/162k275h/obj/arm64-v8a/libsarrai.so	5a9f9ce56d715eb1
+25	1862	8122403555746865	CMakeFiles/sarrai.dir/sarrai_text_engine.cpp.o	31862f05120b2916
+1863	2028	8122403557527132	C:/SARRAI/app/build/intermediates/cxx/Debug/162k275h/obj/arm64-v8a/libsarrai.so	5a9f9ce56d715eb1
+11	1889	8122404630883876	CMakeFiles/sarrai.dir/sarrai_jni.cpp.o	d272741507d6fcb
+1889	2173	8122404633893942	C:/SARRAI/app/build/intermediates/cxx/Debug/162k275h/obj/arm64-v8a/libsarrai.so	5a9f9ce56d715eb1
+14	2328	8122410826377587	CMakeFiles/sarrai.dir/sarrai_text_engine.cpp.o	31862f05120b2916
+2330	2541	8122410828657452	C:/SARRAI/app/build/intermediates/cxx/Debug/162k275h/obj/arm64-v8a/libsarrai.so	5a9f9ce56d715eb1
+19	2241	8122415205360723	CMakeFiles/sarrai.dir/sarrai_text_engine.cpp.o	31862f05120b2916
+2242	2484	8122415207918378	C:/SARRAI/app/build/intermediates/cxx/Debug/162k275h/obj/arm64-v8a/libsarrai.so	5a9f9ce56d715eb1
+40	2650	8122419110171434	CMakeFiles/sarrai.dir/sarrai_text_engine.cpp.o	31862f05120b2916
+2651	2873	8122419112453056	C:/SARRAI/app/build/intermediates/cxx/Debug/162k275h/obj/arm64-v8a/libsarrai.so	5a9f9ce56d715eb1
+42	9425	8127135416698805	CMakeFiles/sarrai.dir/sarrai_text_engine.cpp.o	31862f05120b2916
+9426	10150	8127135424029790	C:/SARRAI/app/build/intermediates/cxx/Debug/162k275h/obj/arm64-v8a/libsarrai.so	5a9f9ce56d715eb1
