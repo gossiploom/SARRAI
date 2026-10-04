@@ -1,12 +1,14 @@
 #pragma once
 
 #include <string>
+#include <vector>
+#include <utility>
 
 class SarraiTextEngine {
 public:
     static SarraiTextEngine& instance();
 
-    std::string generate(const std::string& user_message);
+    std::string generate(const std::vector<std::pair<std::string, std::string>>& messages);
 
 private:
     SarraiTextEngine() = default;

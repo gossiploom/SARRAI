@@ -13,6 +13,9 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ChatActivity extends Activity {
 
     private final int cyan = Color.rgb(0, 229, 255);
@@ -24,12 +27,13 @@ public class ChatActivity extends Activity {
     private LinearLayout messages;
     private EditText input;
     private boolean generating = false;
+    private final List<String[]> conversationHistory = new ArrayList<>();
 
     static {
         System.loadLibrary("sarrai");
     }
 
-    private native String nativeGenerate(String message);
+    private native String nativeGenerate(String[] roles, String[] contents);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -208,21 +212,30 @@ public class ChatActivity extends Activity {
             return;
         }
 
+        // Save and display the user's message immediately.
+        conversationHistory.add(new String[]{"user", message});
         addMessage(message, true);
         input.setText("");
+
+        // Snapshot the complete conversation for this inference request.
+        String[] roles = new String[conversationHistory.size()];
+        String[] contents = new String[conversationHistory.size()];
+
+        for (int i = 0; i < conversationHistory.size(); ++i) {
+            roles[i] = conversationHistory.get(i)[0];
+            contents[i] = conversationHistory.get(i)[1];
+        }
 
         generating = true;
         sendButton.setEnabled(false);
         sendButton.setAlpha(0.5f);
-
-        addMessage("SARRAI is thinking...", false);
 
         Thread worker = new Thread(() -> {
 
             String response;
 
             try {
-                response = nativeGenerate(message);
+                response = nativeGenerate(roles, contents);
             } catch (Throwable error) {
                 response =
                         "ERROR: Local AI engine failed.\n\n"
@@ -235,7 +248,13 @@ public class ChatActivity extends Activity {
 
             runOnUiThread(() -> {
 
-                removeLastMessage();
+                // Save SARRAI's response so future requests receive both
+                // sides of the conversation.
+                if (!finalResponse.startsWith("ERROR:")) {
+                    conversationHistory.add(
+                            new String[]{"assistant", finalResponse}
+                    );
+                }
 
                 addMessage(finalResponse, false);
 
@@ -248,7 +267,6 @@ public class ChatActivity extends Activity {
 
         worker.start();
     }
-
     private void addMessage(
             String message,
             boolean user) {
@@ -317,3 +335,4 @@ public class ChatActivity extends Activity {
         );
     }
 }
+

@@ -133,7 +133,7 @@ bool SarraiTextEngine::ensureLoaded() {
 }
 
 std::string SarraiTextEngine::generate(
-    const std::string& user_message) {
+    const std::vector<std::pair<std::string, std::string>>& messages) {
 
     if (!ensureLoaded()) {
         return "ERROR: SARRAI could not load the local AI model.";
@@ -158,18 +158,38 @@ std::string SarraiTextEngine::generate(
         return "ERROR: No compatible chat template was found.";
     }
 
-    llama_chat_message message{};
-    message.role = "user";
-    // "/no_think" is Qwen3's switch to skip the long reasoning block,
-    // which is important on low-power phones.
-    const std::string content = user_message + " /no_think";
-    message.content = content.c_str();
+    // Build the complete conversation for the Qwen3 chat template.
+    // The Java layer sends every user and assistant turn in order.
+    std::vector<std::string> content_storage;
+    content_storage.reserve(messages.size());
+
+    std::vector<llama_chat_message> chat_messages;
+    chat_messages.reserve(messages.size());
+
+    for (size_t i = 0; i < messages.size(); ++i) {
+        content_storage.push_back(messages[i].second);
+
+        // Qwen3 supports /no_think to avoid the long reasoning block.
+        // Apply it only to the latest user message.
+        if (i == messages.size() - 1 && messages[i].first == "user") {
+            content_storage.back() += " /no_think";
+        }
+
+        llama_chat_message chat_message{};
+        chat_message.role = messages[i].first.c_str();
+        chat_message.content = content_storage.back().c_str();
+        chat_messages.push_back(chat_message);
+    }
+
+    if (chat_messages.empty()) {
+        return "ERROR: The conversation is empty.";
+    }
 
     int32_t prompt_size =
         llama_chat_apply_template(
             tmpl,
-            &message,
-            1,
+            chat_messages.data(),
+            static_cast<int32_t>(chat_messages.size()),
             true,
             nullptr,
             0);
@@ -185,14 +205,13 @@ std::string SarraiTextEngine::generate(
     int32_t formatted_size =
         llama_chat_apply_template(
             tmpl,
-            &message,
-            1,
+            chat_messages.data(),
+            static_cast<int32_t>(chat_messages.size()),
             true,
             prompt.data(),
             static_cast<int32_t>(prompt.size()));
-
-    if (formatted_size < 0) {
-        LOGE("CHAT TEMPLATE FORMATTING FAILED");
+    if (formatted_size <= 0) {
+        LOGE("CHAT TEMPLATE APPLICATION FAILED");
         return "ERROR: Could not format the conversation.";
     }
 
