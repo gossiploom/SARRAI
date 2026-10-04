@@ -25,6 +25,30 @@ namespace {
     llama_context * as_context(void * p) {
         return static_cast<llama_context *>(p);
     }
+
+    std::string trim(const std::string & s) {
+        const char * ws = " \t\r\n";
+        const size_t b = s.find_first_not_of(ws);
+        if (b == std::string::npos) return "";
+        const size_t e = s.find_last_not_of(ws);
+        return s.substr(b, e - b + 1);
+    }
+
+    // Qwen3 emits a <think>...</think> reasoning block before its answer.
+    // Remove it so only the final answer is shown to the user.
+    std::string strip_thinking(const std::string & text) {
+        std::string out = text;
+        size_t start;
+        while ((start = out.find("<think>")) != std::string::npos) {
+            const size_t end = out.find("</think>", start);
+            if (end == std::string::npos) {
+                out.erase(start);
+                break;
+            }
+            out.erase(start, end + 8 - start);
+        }
+        return trim(out);
+    }
 }
 
 SarraiTextEngine& SarraiTextEngine::instance() {
@@ -51,8 +75,12 @@ bool SarraiTextEngine::ensureLoaded() {
         return true;
     }
 
-    LOGI("Initializing llama backend");
-    llama_backend_init();
+    static bool backend_ready = false;
+    if (!backend_ready) {
+        LOGI("Initializing llama backend");
+        llama_backend_init();
+        backend_ready = true;
+    }
 
     llama_model_params model_params = llama_model_default_params();
     model_params.n_gpu_layers = 0;
@@ -69,7 +97,8 @@ bool SarraiTextEngine::ensureLoaded() {
 
     llama_context_params ctx_params = llama_context_default_params();
     ctx_params.n_ctx = CONTEXT_SIZE;
-    ctx_params.n_batch = 512;
+    ctx_params.n_batch = CONTEXT_SIZE;
+    ctx_params.n_ubatch = 512;
     ctx_params.n_threads = 4;
     ctx_params.n_threads_batch = 4;
 
@@ -131,7 +160,10 @@ std::string SarraiTextEngine::generate(
 
     llama_chat_message message{};
     message.role = "user";
-    message.content = user_message.c_str();
+    // "/no_think" is Qwen3's switch to skip the long reasoning block,
+    // which is important on low-power phones.
+    const std::string content = user_message + " /no_think";
+    message.content = content.c_str();
 
     int32_t prompt_size =
         llama_chat_apply_template(
@@ -209,8 +241,15 @@ std::string SarraiTextEngine::generate(
 
     LOGI("Prompt token count: %d", actual_tokens);
 
+    if (actual_tokens >= CONTEXT_SIZE - 8) {
+        LOGE("PROMPT TOO LONG: %d tokens", actual_tokens);
+        return "ERROR: The message is too long for SARRAI's memory.";
+    }
+
+    const int32_t batch_capacity = actual_tokens > 512 ? actual_tokens : 512;
+
     llama_batch batch =
-        llama_batch_init(512, 0, 1);
+        llama_batch_init(batch_capacity, 0, 1);
 
     if (batch.token == nullptr) {
         LOGE("BATCH INITIALIZATION FAILED");
@@ -265,13 +304,22 @@ std::string SarraiTextEngine::generate(
     std::string response;
     response.reserve(1024);
 
+    const int32_t n_ctx = static_cast<int32_t>(llama_n_ctx(ctx));
     llama_pos current_pos = actual_tokens;
+    bool generation_error = false;
+    int32_t generated = 0;
 
     for (int32_t i = 0; i < MAX_GENERATION_TOKENS; ++i) {
 
+        if (current_pos >= n_ctx) {
+            LOGI("Context window full (%d tokens); stopping generation", n_ctx);
+            break;
+        }
+
+        // Sample from the logits of the last token that was decoded.
+        // llama_sampler_sample() also calls llama_sampler_accept() internally.
         llama_token token =
             llama_sampler_sample(sampler, ctx, -1);
-
 
         if (llama_vocab_is_eog(vocab, token)) {
             break;
@@ -286,33 +334,53 @@ std::string SarraiTextEngine::generate(
                 piece,
                 sizeof(piece),
                 0,
-                true);
+                false);   // do not render special/control tokens as text
 
         if (piece_size > 0) {
             response.append(piece, static_cast<size_t>(piece_size));
         }
 
+        // Feed the sampled token back into the model as a single-token batch.
+        // FIX: n_tokens must be 1. Previously it was reset to 0 and never
+        // incremented, so llama_decode() received an empty batch and
+        // rejected it with -1 ("GENERATION DECODE FAILED: -1").
         batch.n_tokens = 0;
-
         batch.token[0] = token;
-        batch.pos[0] = current_pos++;
+        batch.pos[0] = current_pos;
         batch.n_seq_id[0] = 1;
         batch.seq_id[0][0] = 0;
         batch.logits[0] = 1;
+        batch.n_tokens = 1;
 
         result = llama_decode(ctx, batch);
 
         if (result != 0) {
-            LOGE("GENERATION DECODE FAILED: %d", result);
+            LOGE("GENERATION DECODE FAILED: %d (pos=%d, token=%d)",
+                 result, current_pos, token);
+            generation_error = true;
             break;
         }
+
+        ++current_pos;
+        ++generated;
     }
 
     llama_sampler_free(sampler);
     llama_batch_free(batch);
 
-    LOGI("Generation complete. Response length: %zu",
-         response.size());
+    response = strip_thinking(response);
+
+    if (generation_error) {
+        LOGE("Generation TERMINATED BY ERROR after %d tokens. Partial length: %zu",
+             generated, response.size());
+        if (response.empty()) {
+            return "ERROR: SARRAI's local AI engine failed while generating a reply.";
+        }
+        return response + "\n\n[Reply cut short by a local engine error]";
+    }
+
+    LOGI("Generation completed successfully. Tokens: %d, response length: %zu",
+         generated, response.size());
 
     if (response.empty()) {
         return "ERROR: SARRAI generated an empty response.";
