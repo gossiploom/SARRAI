@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:39-482
-INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:39-482
-INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:39-482
-INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:39-482
+ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:39-700
+INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:39-700
+INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:39-700
+INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:39-700
 	package
 		INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml
 	android:versionName
@@ -13,36 +13,52 @@ INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:39-482
 	xmlns:android
 		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:49-107
 application
-ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:108-471
-INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:108-471
+ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:108-689
+INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:108-689
 	android:extractNativeLibs
 		INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml
 	android:label
 		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:153-175
+	android:roundIcon
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:211-250
+	android:icon
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:176-210
 	android:theme
 		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:121-152
 activity#com.sarrai.app.ChatActivity
-ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:176-242
+ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:251-317
 	android:exported
-		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:215-239
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:290-314
 	android:name
-		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:186-214
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:261-289
+activity#com.sarrai.app.ConversationsActivity
+ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:317-392
+	android:exported
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:365-389
+	android:name
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:327-364
+activity#com.sarrai.app.MemoryActivity
+ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:392-460
+	android:exported
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:433-457
+	android:name
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:402-432
 activity#com.sarrai.app.MainActivity
-ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:242-457
+ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:460-675
 	android:exported
-		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:281-304
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:499-522
 	android:name
-		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:252-280
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:470-498
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:305-446
+ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:523-664
 action#android.intent.action.MAIN
-ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:320-371
+ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:538-589
 	android:name
-		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:328-369
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:546-587
 category#android.intent.category.LAUNCHER
-ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:371-430
+ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:589-648
 	android:name
-		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:381-428
+		ADDED from C:\SARRAI\app\src\main\AndroidManifest.xml:1:599-646
 uses-sdk
 INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from C:\SARRAI\app\src\main\AndroidManifest.xml

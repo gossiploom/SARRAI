@@ -1,2 +1,3 @@
-com.sarrai.app:style/AppTheme = 0x7f020000
+com.sarrai.app:style/AppTheme = 0x7f030000
+com.sarrai.app:mipmap/ic_launcher = 0x7f020000
 com.sarrai.app:drawable/sarrai_logo = 0x7f010000

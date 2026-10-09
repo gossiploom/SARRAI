@@ -53,7 +53,7 @@ build CMakeFiles/sarrai.dir/sarrai_jni.cpp.o: CXX_COMPILER__sarrai_Debug C$:/SAR
   DEFINES = -Dsarrai_EXPORTS
   DEP_FILE = CMakeFiles\sarrai.dir\sarrai_jni.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC
-  INCLUDES = -IC:/SARRAI/llama.cpp/include -IC:/SARRAI/llama.cpp/ggml/include
+  INCLUDES = -IC:/SARRAI/app/src/main/cpp/../../../../llama.cpp/include -IC:/SARRAI/app/src/main/cpp/../../../../llama.cpp/ggml/include
   OBJECT_DIR = CMakeFiles\sarrai.dir
   OBJECT_FILE_DIR = CMakeFiles\sarrai.dir
 
@@ -61,7 +61,7 @@ build CMakeFiles/sarrai.dir/sarrai_text_engine.cpp.o: CXX_COMPILER__sarrai_Debug
   DEFINES = -Dsarrai_EXPORTS
   DEP_FILE = CMakeFiles\sarrai.dir\sarrai_text_engine.cpp.o.d
   FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC
-  INCLUDES = -IC:/SARRAI/llama.cpp/include -IC:/SARRAI/llama.cpp/ggml/include
+  INCLUDES = -IC:/SARRAI/app/src/main/cpp/../../../../llama.cpp/include -IC:/SARRAI/app/src/main/cpp/../../../../llama.cpp/ggml/include
   OBJECT_DIR = CMakeFiles\sarrai.dir
   OBJECT_FILE_DIR = CMakeFiles\sarrai.dir
 

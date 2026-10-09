@@ -9,36 +9,52 @@
 9        android:targetSdkVersion="35" />
 10
 11    <application
-11-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:108-471
+11-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:108-689
 12        android:debuggable="true"
 13        android:extractNativeLibs="false"
-14        android:label="SARRAI"
-14-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:153-175
-15        android:theme="@style/AppTheme" >
-15-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:121-152
-16        <activity
-16-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:176-242
-17            android:name="com.sarrai.app.ChatActivity"
-17-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:186-214
-18            android:exported="false" />
-18-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:215-239
-19        <activity
-19-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:242-457
-20            android:name="com.sarrai.app.MainActivity"
-20-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:252-280
-21            android:exported="true" >
-21-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:281-304
-22            <intent-filter>
-22-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:305-446
-23                <action android:name="android.intent.action.MAIN" />
-23-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:320-371
-23-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:328-369
-24
-25                <category android:name="android.intent.category.LAUNCHER" />
-25-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:371-430
-25-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:381-428
-26            </intent-filter>
-27        </activity>
-28    </application>
-29
-30</manifest>
+14        android:icon="@mipmap/ic_launcher"
+14-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:176-210
+15        android:label="SARRAI"
+15-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:153-175
+16        android:roundIcon="@mipmap/ic_launcher"
+16-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:211-250
+17        android:theme="@style/AppTheme" >
+17-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:121-152
+18        <activity
+18-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:251-317
+19            android:name="com.sarrai.app.ChatActivity"
+19-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:261-289
+20            android:exported="false" />
+20-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:290-314
+21        <activity
+21-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:317-392
+22            android:name="com.sarrai.app.ConversationsActivity"
+22-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:327-364
+23            android:exported="false" />
+23-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:365-389
+24        <activity
+24-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:392-460
+25            android:name="com.sarrai.app.MemoryActivity"
+25-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:402-432
+26            android:exported="false" />
+26-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:433-457
+27        <activity
+27-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:460-675
+28            android:name="com.sarrai.app.MainActivity"
+28-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:470-498
+29            android:exported="true" >
+29-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:499-522
+30            <intent-filter>
+30-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:523-664
+31                <action android:name="android.intent.action.MAIN" />
+31-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:538-589
+31-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:546-587
+32
+33                <category android:name="android.intent.category.LAUNCHER" />
+33-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:589-648
+33-->C:\SARRAI\app\src\main\AndroidManifest.xml:1:599-646
+34            </intent-filter>
+35        </activity>
+36    </application>
+37
+38</manifest>

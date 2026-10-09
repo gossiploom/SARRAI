@@ -11,10 +11,18 @@
     <application
         android:debuggable="true"
         android:extractNativeLibs="false"
+        android:icon="@mipmap/ic_launcher"
         android:label="SARRAI"
+        android:roundIcon="@mipmap/ic_launcher"
         android:theme="@style/AppTheme" >
         <activity
             android:name="com.sarrai.app.ChatActivity"
+            android:exported="false" />
+        <activity
+            android:name="com.sarrai.app.ConversationsActivity"
+            android:exported="false" />
+        <activity
+            android:name="com.sarrai.app.MemoryActivity"
             android:exported="false" />
         <activity
             android:name="com.sarrai.app.MainActivity"

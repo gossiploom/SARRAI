@@ -1,3 +1,2 @@
 ninja: Entering directory `C:\SARRAI\app\.cxx\Debug\162k275h\arm64-v8a'
-[1/2] Building CXX object CMakeFiles/sarrai.dir/sarrai_text_engine.cpp.o
-[2/2] Linking CXX shared library C:\SARRAI\app\build\intermediates\cxx\Debug\162k275h\obj\arm64-v8a\libsarrai.so
+ninja: no work to do.
