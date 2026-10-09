@@ -100,7 +100,7 @@ public class MainActivity extends Activity {
                 "CHAT",
                 "Talk with SARRAI using the local AI engine.",
                 "Open Chat",
-                v -> startActivity(new Intent(this, ChatActivity.class))
+                v -> startActivity(new Intent(this, ConversationsActivity.class))
         ));
 
         content.addView(createSection(
@@ -114,7 +114,7 @@ public class MainActivity extends Activity {
                 "MEMORY",
                 "Control information SARRAI is allowed to remember locally.",
                 "Open Memory",
-                v -> showMessage("Memory section coming next.")
+                v -> startActivity(new Intent(this, MemoryActivity.class))
         ));
 
         content.addView(createSection(
@@ -129,7 +129,7 @@ public class MainActivity extends Activity {
                 new LinearLayout.LayoutParams(1, dp(20)));
 
         TextView status = new TextView(this);
-        status.setText("Ã¢â€”Â  LOCAL MODE  Ã¢â‚¬Â¢  AI ENGINE READY");
+        status.setText("\u25CF  LOCAL MODE  \u2022  AI ENGINE READY");
         status.setTextColor(cyan);
         status.setTextSize(12);
         status.setGravity(Gravity.CENTER);
