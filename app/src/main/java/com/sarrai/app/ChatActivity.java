@@ -1,6 +1,8 @@
 package com.sarrai.app;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Toast;
 import android.graphics.Color;
@@ -29,6 +31,8 @@ public class ChatActivity extends Activity {
     private EditText input;
     private boolean generating = false;
     private final List<String[]> conversationHistory = new ArrayList<>();
+    private final List<Uri> selectedFileUris = new ArrayList<>();
+    private static final int REQUEST_PICK_FILES = 1001;
 
     public static final String EXTRA_CONVERSATION_ID = "conversation_id";
     private SarraiStore store;
@@ -143,16 +147,6 @@ public class ChatActivity extends Activity {
         } else {
             conversationId = -1;
         }
-        if (conversationHistory.isEmpty()) {
-            addMessage(
-                    "Hello. I am SARRAI.\n\n"
-                            + "I am running locally on this device. "
-                            + "Send me a message to begin.\n\n"
-                            + "Tip: say \"Remember my name is ...\" and I will keep it in memory.",
-                    false
-            );
-        }
-
         scroll.addView(messages);
 
         root.addView(
@@ -194,6 +188,15 @@ public class ChatActivity extends Activity {
 
         input.setBackground(inputBg);
 
+                TextView attach = new TextView(this);
+        attach.setText("+");
+        attach.setTextColor(cyan);
+        attach.setTextSize(28);
+        attach.setGravity(Gravity.CENTER);
+        attach.setContentDescription("Attach files");
+        attach.setOnClickListener(v -> openFilePicker());
+        composer.addView(attach, new LinearLayout.LayoutParams(dp(44), dp(52)));
+
         composer.addView(
                 input,
                 new LinearLayout.LayoutParams(0, dp(52), 1)
@@ -229,6 +232,49 @@ public class ChatActivity extends Activity {
         scrollToBottom();
     }
 
+    private void openFilePicker() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] {
+                "application/pdf",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "application/vnd.ms-excel",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "application/vnd.ms-powerpoint",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "text/plain",
+                "text/csv",
+                "image/*"
+        });
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        startActivityForResult(intent, REQUEST_PICK_FILES);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode != REQUEST_PICK_FILES || resultCode != RESULT_OK || data == null) {
+            return;
+        }
+
+        selectedFileUris.clear();
+        android.content.ClipData clipData = data.getClipData();
+
+        if (clipData != null) {
+            for (int i = 0; i < clipData.getItemCount(); i++) {
+                Uri uri = clipData.getItemAt(i).getUri();
+                if (uri != null) selectedFileUris.add(uri);
+            }
+        } else if (data.getData() != null) {
+            selectedFileUris.add(data.getData());
+        }
+
+        Toast.makeText(this, selectedFileUris.size() + " file(s) selected",
+                Toast.LENGTH_LONG).show();
+    }
     @Override
     protected void onSaveInstanceState(Bundle out) {
         super.onSaveInstanceState(out);
@@ -280,73 +326,100 @@ public class ChatActivity extends Activity {
     }
 
     private void sendMessage(TextView sendButton) {
+        if (generating) return;
 
-        if (generating) {
-            return;
+        String message = input.getText().toString().trim();
+        if (message.isEmpty() && selectedFileUris.isEmpty()) return;
+
+        if (!selectedFileUris.isEmpty() && message.isEmpty()) {
+            message = "Please analyse the attached file(s).";
         }
 
-        String message =
-                input.getText().toString().trim();
+        if (selectedFileUris.isEmpty() && handleMemoryCommand(message)) return;
 
-        if (message.isEmpty()) {
-            return;
+        final String userMessage = message;
+        final ArrayList<Uri> files = new ArrayList<>(selectedFileUris);
+        selectedFileUris.clear();
+
+        ensureConversation(userMessage);
+        store.addMessage(conversationId, "user", userMessage);
+        conversationHistory.add(new String[]{"user", userMessage});
+
+        String displayMessage = userMessage;
+        if (!files.isEmpty()) {
+            displayMessage += "\n[Attached " + files.size() + " file(s)]";
         }
-
-        if (handleMemoryCommand(message)) {
-            return;
-        }
-
-        // Save (to disk) and display the user's message immediately.
-        ensureConversation(message);
-        store.addMessage(conversationId, "user", message);
-        conversationHistory.add(new String[]{"user", message});
-        addMessage(message, true);
+        addMessage(displayMessage, true);
         input.setText("");
 
-        // Memories + rules + as much recent history as fits the 2048-token window.
-        String[][] built = ContextBuilder.build(store.listMemories(), conversationHistory);
-        String[] roles = built[0];
-        String[] contents = built[1];
         final long convId = conversationId;
+        final List<SarraiStore.Memory> memories = store.listMemories();
+        final List<String[]> historySnapshot = new ArrayList<>(conversationHistory);
 
         generating = true;
         sendButton.setEnabled(false);
         sendButton.setAlpha(0.5f);
 
         Thread worker = new Thread(() -> {
+            StringBuilder extracted = new StringBuilder();
+
+            for (Uri uri : files) {
+                try {
+                    String content = FileTextExtractor.extract(this, uri);
+                    int remaining = 18000 - extracted.length();
+                    if (remaining <= 0) {
+                        extracted.append("\n[Additional file text omitted to fit context.]");
+                        break;
+                    }
+                    if (content.length() > remaining) {
+                        extracted.append(content, 0, remaining);
+                        extracted.append("\n[File text truncated to fit context.]");
+                        break;
+                    }
+                    extracted.append("\n\n").append(content);
+                } catch (Throwable error) {
+                    extracted.append("\n\n[Could not extract a file: ")
+                            .append(error.getClass().getSimpleName())
+                            .append(": ").append(String.valueOf(error.getMessage()))
+                            .append("]");
+                }
+            }
+
+            final String extractedText = extracted.toString().trim();
+            if (!extractedText.isEmpty()) {
+                historySnapshot.add(new String[]{
+                        "user", "Extracted text from attached files:\n" + extractedText
+                });
+            }
 
             String response;
-
             try {
-                response = nativeGenerate(roles, contents);
+                String[][] built = ContextBuilder.build(memories, historySnapshot);
+                response = nativeGenerate(built[0], built[1]);
             } catch (Throwable error) {
-                response =
-                        "ERROR: Local AI engine failed.\n\n"
-                                + error.getClass().getSimpleName()
-                                + ": "
-                                + error.getMessage();
+                response = "ERROR: Local AI or file processing failed.\n\n"
+                        + error.getClass().getSimpleName() + ": " + error.getMessage();
             }
 
             final String finalResponse = response;
 
             runOnUiThread(() -> {
+                if (!extractedText.isEmpty()) {
+                    String savedExtract = "Extracted text from attached files:\n" + extractedText;
+                    conversationHistory.add(new String[]{"user", savedExtract});
+                    store.addMessage(convId, "user", savedExtract);
+                }
 
-                // Save SARRAI's response so future requests receive both
-                // sides of the conversation.
                 if (!finalResponse.startsWith("ERROR:")) {
-                    conversationHistory.add(
-                            new String[]{"assistant", finalResponse}
-                    );
+                    conversationHistory.add(new String[]{"assistant", finalResponse});
                     store.addMessage(convId, "assistant", finalResponse);
                 }
 
                 addMessage(finalResponse, false);
-
                 generating = false;
                 sendButton.setEnabled(true);
                 sendButton.setAlpha(1.0f);
             });
-
         });
 
         worker.start();

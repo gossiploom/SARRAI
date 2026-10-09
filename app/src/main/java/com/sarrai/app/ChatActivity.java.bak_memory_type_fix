@@ -1,0 +1,507 @@
+package com.sarrai.app;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Bundle;
+import android.widget.Toast;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ChatActivity extends Activity {
+
+    private final int cyan = Color.rgb(0, 229, 255);
+    private final int dark = Color.rgb(5, 8, 14);
+    private final int panel = Color.rgb(12, 18, 28);
+    private final int text = Color.WHITE;
+    private final int muted = Color.rgb(150, 165, 180);
+
+    private LinearLayout messages;
+    private EditText input;
+    private boolean generating = false;
+    private final List<String[]> conversationHistory = new ArrayList<>();
+    private final List<Uri> selectedFileUris = new ArrayList<>();
+    private static final int REQUEST_PICK_FILES = 1001;
+
+    public static final String EXTRA_CONVERSATION_ID = "conversation_id";
+    private SarraiStore store;
+    private long conversationId = -1; // created lazily on first message
+    private ScrollView scrollView;
+    private TextView titleView;
+
+    static {
+        System.loadLibrary("sarrai");
+    }
+
+    private native String nativeGenerate(String[] roles, String[] contents);
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        store = SarraiStore.get(this);
+        conversationId = getIntent().getLongExtra(EXTRA_CONVERSATION_ID, -1);
+        if (savedInstanceState != null) {
+            conversationId = savedInstanceState.getLong(EXTRA_CONVERSATION_ID, conversationId);
+        }
+
+        getWindow().setStatusBarColor(Color.BLACK);
+        getWindow().setNavigationBarColor(Color.BLACK);
+
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setBackgroundColor(dark);
+
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setPadding(dp(14), dp(10), dp(14), dp(10));
+
+        ImageView logo = new ImageView(this);
+        logo.setImageResource(R.drawable.sarrai_logo);
+        logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
+        header.addView(
+                logo,
+                new LinearLayout.LayoutParams(dp(48), dp(48))
+        );
+
+        LinearLayout titleBox = new LinearLayout(this);
+        titleBox.setOrientation(LinearLayout.VERTICAL);
+        titleBox.setPadding(dp(12), 0, 0, 0);
+
+        TextView title = new TextView(this);
+        titleView = title;
+        title.setText("SARRAI");
+        title.setSingleLine(true);
+        title.setTextColor(text);
+        title.setTextSize(20);
+        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+
+        TextView status = new TextView(this);
+        status.setText("LOCAL AI - OFFLINE");
+        status.setTextColor(cyan);
+        status.setTextSize(11);
+
+        titleBox.addView(title);
+        titleBox.addView(status);
+
+        header.addView(
+                titleBox,
+                new LinearLayout.LayoutParams(0, -2, 1)
+        );
+
+        TextView back = new TextView(this);
+        back.setText("<");
+        back.setTextColor(cyan);
+        back.setTextSize(28);
+        back.setGravity(Gravity.CENTER);
+        back.setOnClickListener(v -> finish());
+
+        header.addView(
+                back,
+                new LinearLayout.LayoutParams(dp(45), dp(50))
+        );
+
+        root.addView(header);
+
+        View divider = new View(this);
+        divider.setBackgroundColor(Color.rgb(25, 55, 70));
+
+        root.addView(
+                divider,
+                new LinearLayout.LayoutParams(-1, dp(1))
+        );
+
+        ScrollView scroll = new ScrollView(this);
+        scrollView = scroll;
+        scroll.setFillViewport(true);
+
+        messages = new LinearLayout(this);
+        messages.setOrientation(LinearLayout.VERTICAL);
+        messages.setPadding(
+                dp(14),
+                dp(18),
+                dp(14),
+                dp(18)
+        );
+
+        SarraiStore.Conversation existing =
+                conversationId > 0 ? store.getConversation(conversationId) : null;
+        if (existing != null) {
+            title.setText(existing.title);
+            for (SarraiStore.Message m : store.getMessages(conversationId)) {
+                conversationHistory.add(new String[]{m.role, m.content});
+                addMessage(m.content, "user".equals(m.role));
+            }
+        } else {
+            conversationId = -1;
+        }
+        if (conversationHistory.isEmpty()) {
+            addMessage(
+                    "Hello. I am SARRAI.\n\n"
+                            + "I am running locally on this device. "
+                            + "Send me a message to begin.\n\n"
+                            + "Tip: say \"Remember my name is ...\" and I will keep it in memory.",
+                    false
+            );
+        }
+
+        scroll.addView(messages);
+
+        root.addView(
+                scroll,
+                new LinearLayout.LayoutParams(-1, 0, 1)
+        );
+
+        LinearLayout composer = new LinearLayout(this);
+        composer.setOrientation(LinearLayout.HORIZONTAL);
+        composer.setGravity(Gravity.CENTER_VERTICAL);
+        composer.setPadding(
+                dp(10),
+                dp(8),
+                dp(10),
+                dp(10)
+        );
+
+        input = new EditText(this);
+        input.setHint("Message SARRAI...");
+        input.setHintTextColor(muted);
+        input.setTextColor(text);
+        input.setTextSize(15);
+        input.setSingleLine(false);
+        input.setMaxLines(4);
+        input.setPadding(
+                dp(14),
+                dp(8),
+                dp(14),
+                dp(8)
+        );
+
+        GradientDrawable inputBg = new GradientDrawable();
+        inputBg.setColor(panel);
+        inputBg.setCornerRadius(dp(12));
+        inputBg.setStroke(
+                dp(1),
+                Color.rgb(25, 55, 70)
+        );
+
+        input.setBackground(inputBg);
+
+                TextView attach = new TextView(this);
+        attach.setText("+");
+        attach.setTextColor(cyan);
+        attach.setTextSize(28);
+        attach.setGravity(Gravity.CENTER);
+        attach.setContentDescription("Attach files");
+        attach.setOnClickListener(v -> openFilePicker());
+        composer.addView(attach, new LinearLayout.LayoutParams(dp(44), dp(52)));
+
+        composer.addView(
+                input,
+                new LinearLayout.LayoutParams(0, dp(52), 1)
+        );
+
+        TextView send = new TextView(this);
+        send.setText(">");
+        send.setTextColor(Color.BLACK);
+        send.setTextSize(22);
+        send.setGravity(Gravity.CENTER);
+
+        GradientDrawable sendBg = new GradientDrawable();
+        sendBg.setColor(cyan);
+        sendBg.setCornerRadius(dp(12));
+
+        send.setBackground(sendBg);
+
+        LinearLayout.LayoutParams sendParams =
+                new LinearLayout.LayoutParams(
+                        dp(52),
+                        dp(52)
+                );
+
+        sendParams.setMargins(dp(8), 0, 0, 0);
+
+        composer.addView(send, sendParams);
+
+        send.setOnClickListener(v -> sendMessage(send));
+
+        root.addView(composer);
+
+        setContentView(root);
+        scrollToBottom();
+    }
+
+    private void openFilePicker() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] {
+                "application/pdf",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "application/vnd.ms-excel",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "application/vnd.ms-powerpoint",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "text/plain",
+                "text/csv",
+                "image/*"
+        });
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        startActivityForResult(intent, REQUEST_PICK_FILES);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode != REQUEST_PICK_FILES || resultCode != RESULT_OK || data == null) {
+            return;
+        }
+
+        selectedFileUris.clear();
+        android.content.ClipData clipData = data.getClipData();
+
+        if (clipData != null) {
+            for (int i = 0; i < clipData.getItemCount(); i++) {
+                Uri uri = clipData.getItemAt(i).getUri();
+                if (uri != null) selectedFileUris.add(uri);
+            }
+        } else if (data.getData() != null) {
+            selectedFileUris.add(data.getData());
+        }
+
+        Toast.makeText(this, selectedFileUris.size() + " file(s) selected",
+                Toast.LENGTH_LONG).show();
+    }
+    @Override
+    protected void onSaveInstanceState(Bundle out) {
+        super.onSaveInstanceState(out);
+        out.putLong(EXTRA_CONVERSATION_ID, conversationId);
+    }
+
+    private void ensureConversation(String firstMessage) {
+        if (conversationId > 0) return;
+        String t = firstMessage.replace('\n', ' ').trim();
+        if (t.length() > 40) t = t.substring(0, 40).trim() + "...";
+        conversationId = store.createConversation(t);
+        titleView.setText(t);
+    }
+
+    private void scrollToBottom() {
+        if (scrollView != null) scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
+    }
+
+    /** Handles explicit "remember"/"forget" requests locally. Returns true if handled. */
+    private boolean handleMemoryCommand(String message) {
+        String forget = ContextBuilder.parseForget(message);
+        String fact = forget == null ? ContextBuilder.parseRemember(message) : null;
+        if (forget == null && fact == null) return false;
+
+        ensureConversation(message);
+        store.addMessage(conversationId, "user", message);
+        addMessage(message, true);
+        input.setText("");
+
+        String reply;
+        if (forget != null) {
+            if ("*".equals(forget)) {
+                store.clearMemories();
+                reply = "Done. I have cleared all saved memories.";
+            } else {
+                int n = store.forgetMatching(forget);
+                reply = n > 0 ? "Done. I have forgotten " + n + " saved memor" + (n == 1 ? "y" : "ies") + " about \"" + forget + "\"."
+                        : "I don't have any saved memory about \"" + forget + "\".";
+            }
+        } else {
+            store.addMemory(fact);
+            reply = "Got it. I will remember: " + fact;
+        }
+        // Note: memory commands are saved to the chat log but not sent to the model as history.
+        store.addMessage(conversationId, "assistant", reply);
+        addMessage(reply, false);
+        Toast.makeText(this, "Memory updated", Toast.LENGTH_SHORT).show();
+        return true;
+    }
+
+    private void sendMessage(TextView sendButton) {
+        if (generating) return;
+
+        String message = input.getText().toString().trim();
+        if (message.isEmpty() && selectedFileUris.isEmpty()) return;
+
+        if (!selectedFileUris.isEmpty() && message.isEmpty()) {
+            message = "Please analyse the attached file(s).";
+        }
+
+        if (selectedFileUris.isEmpty() && handleMemoryCommand(message)) return;
+
+        final String userMessage = message;
+        final ArrayList<Uri> files = new ArrayList<>(selectedFileUris);
+        selectedFileUris.clear();
+
+        ensureConversation(userMessage);
+        store.addMessage(conversationId, "user", userMessage);
+        conversationHistory.add(new String[]{"user", userMessage});
+
+        String displayMessage = userMessage;
+        if (!files.isEmpty()) {
+            displayMessage += "\n[Attached " + files.size() + " file(s)]";
+        }
+        addMessage(displayMessage, true);
+        input.setText("");
+
+        final long convId = conversationId;
+        final List<String> memories = store.listMemories();
+        final List<String[]> historySnapshot = new ArrayList<>(conversationHistory);
+
+        generating = true;
+        sendButton.setEnabled(false);
+        sendButton.setAlpha(0.5f);
+
+        Thread worker = new Thread(() -> {
+            StringBuilder extracted = new StringBuilder();
+
+            for (Uri uri : files) {
+                try {
+                    String content = FileTextExtractor.extract(this, uri);
+                    int remaining = 18000 - extracted.length();
+                    if (remaining <= 0) {
+                        extracted.append("\n[Additional file text omitted to fit context.]");
+                        break;
+                    }
+                    if (content.length() > remaining) {
+                        extracted.append(content, 0, remaining);
+                        extracted.append("\n[File text truncated to fit context.]");
+                        break;
+                    }
+                    extracted.append("\n\n").append(content);
+                } catch (Throwable error) {
+                    extracted.append("\n\n[Could not extract a file: ")
+                            .append(error.getClass().getSimpleName())
+                            .append(": ").append(String.valueOf(error.getMessage()))
+                            .append("]");
+                }
+            }
+
+            final String extractedText = extracted.toString().trim();
+            if (!extractedText.isEmpty()) {
+                historySnapshot.add(new String[]{
+                        "user", "Extracted text from attached files:\n" + extractedText
+                });
+            }
+
+            String response;
+            try {
+                String[][] built = ContextBuilder.build(memories, historySnapshot);
+                response = nativeGenerate(built[0], built[1]);
+            } catch (Throwable error) {
+                response = "ERROR: Local AI or file processing failed.\n\n"
+                        + error.getClass().getSimpleName() + ": " + error.getMessage();
+            }
+
+            final String finalResponse = response;
+
+            runOnUiThread(() -> {
+                if (!extractedText.isEmpty()) {
+                    String savedExtract = "Extracted text from attached files:\n" + extractedText;
+                    conversationHistory.add(new String[]{"user", savedExtract});
+                    store.addMessage(convId, "user", savedExtract);
+                }
+
+                if (!finalResponse.startsWith("ERROR:")) {
+                    conversationHistory.add(new String[]{"assistant", finalResponse});
+                    store.addMessage(convId, "assistant", finalResponse);
+                }
+
+                addMessage(finalResponse, false);
+                generating = false;
+                sendButton.setEnabled(true);
+                sendButton.setAlpha(1.0f);
+            });
+        });
+
+        worker.start();
+    }
+    private void addMessage(
+            String message,
+            boolean user) {
+
+        TextView bubble = new TextView(this);
+
+        bubble.setText(message);
+        bubble.setTextSize(15);
+        bubble.setTextColor(
+                user ? Color.BLACK : text
+        );
+
+        bubble.setPadding(
+                dp(14),
+                dp(11),
+                dp(14),
+                dp(11)
+        );
+
+        GradientDrawable bg =
+                new GradientDrawable();
+
+        bg.setColor(
+                user ? cyan : panel
+        );
+
+        bg.setCornerRadius(dp(14));
+
+        bubble.setBackground(bg);
+
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(
+                        -2,
+                        -2
+                );
+
+        params.setMargins(
+                user ? dp(45) : dp(0),
+                dp(5),
+                user ? dp(0) : dp(45),
+                dp(5)
+        );
+
+        bubble.setLayoutParams(params);
+
+        bubble.setTextIsSelectable(true);
+        messages.addView(bubble);
+        scrollToBottom();
+    }
+
+    private void removeLastMessage() {
+
+        int count = messages.getChildCount();
+
+        if (count > 0) {
+            messages.removeViewAt(count - 1);
+        }
+    }
+
+    private int dp(int value) {
+
+        return (int) (
+                value
+                        * getResources()
+                        .getDisplayMetrics()
+                        .density
+                        + 0.5f
+        );
+    }
+}
+

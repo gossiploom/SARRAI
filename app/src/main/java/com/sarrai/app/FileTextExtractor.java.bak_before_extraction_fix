@@ -1,0 +1,149 @@
+package com.sarrai.app;
+
+import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.OpenableColumns;
+
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader;
+import com.tom_roush.pdfbox.pdmodel.PDDocument;
+import com.tom_roush.pdfbox.text.PDFTextStripper;
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.text.TextRecognition;
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+import com.google.android.gms.tasks.Tasks;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+
+public final class FileTextExtractor {
+    private static final int MAX_CHARS = 60000;
+
+    private FileTextExtractor() {}
+
+    public static String extract(Context context, Uri uri) throws Exception {
+        String name = getName(context, uri);
+        String lower = name.toLowerCase(Locale.ROOT);
+        String mime = context.getContentResolver().getType(uri);
+        String result;
+
+        if (lower.endsWith(".pdf") || "application/pdf".equals(mime)) {
+            PDFBoxResourceLoader.init(context.getApplicationContext());
+            try (InputStream in = context.getContentResolver().openInputStream(uri);
+                 PDDocument pdf = PDDocument.load(in)) {
+                result = new PDFTextStripper().getText(pdf);
+            }
+        } else if (lower.endsWith(".docx") || lower.endsWith(".xlsx")
+                || lower.endsWith(".pptx")) {
+            result = extractOfficeXml(context, uri);
+        } else if (lower.endsWith(".txt") || lower.endsWith(".csv")
+                || lower.endsWith(".md") || lower.endsWith(".json")
+                || lower.endsWith(".xml") || lower.endsWith(".log")) {
+            try (InputStream in = context.getContentResolver().openInputStream(uri)) {
+                result = readLimited(in);
+            }
+        } else if ((mime != null && mime.startsWith("image/"))
+                || lower.matches(".*\\.(png|jpe?g|webp|bmp|gif)$")) {
+            InputImage image = InputImage.fromFilePath(context, uri);
+            com.google.mlkit.vision.text.Text resultText =
+                    Tasks.await(
+                            TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+                                    .process(image),
+                            60, TimeUnit.SECONDS
+                    );
+            result = resultText.getText();
+        } else {
+            throw new IllegalArgumentException(
+                    "Unsupported file type: " + name
+                    + ". Supported: PDF, DOCX, XLSX, PPTX, TXT, CSV and images."
+            );
+        }
+
+        if (result == null || result.trim().isEmpty()) {
+            return "[No extractable text found in " + name
+                    + ". The file may be scanned or contain only images.]";
+        }
+        if (result.length() > MAX_CHARS) {
+            result = result.substring(0, MAX_CHARS)
+                    + "\n\n[Text truncated to fit the local AI context.]";
+        }
+        return "FILE: " + name + "\n" + result;
+    }
+
+    private static String getName(Context context, Uri uri) {
+        try (Cursor c = context.getContentResolver().query(
+                uri, null, null, null, null)) {
+            if (c != null && c.moveToFirst()) {
+                int i = c.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                if (i >= 0) return c.getString(i);
+            }
+        } catch (Exception ignored) {}
+        return uri.getLastPathSegment() == null ? "selected file"
+                : uri.getLastPathSegment();
+    }
+
+    private static String readLimited(InputStream in) throws Exception {
+        if (in == null) throw new IllegalArgumentException("Cannot open selected file.");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] buffer = new byte[8192];
+        int n;
+        int total = 0;
+        while ((n = in.read(buffer)) != -1 && total < MAX_CHARS * 4) {
+            int keep = Math.min(n, MAX_CHARS * 4 - total);
+            out.write(buffer, 0, keep);
+            total += keep;
+        }
+        return new String(out.toByteArray(), StandardCharsets.UTF_8);
+    }
+
+    private static String extractOfficeXml(Context context, Uri uri) throws Exception {
+        StringBuilder output = new StringBuilder();
+        try (InputStream raw = context.getContentResolver().openInputStream(uri);
+             ZipInputStream zip = new ZipInputStream(raw)) {
+            if (raw == null) throw new IllegalArgumentException("Cannot open Office file.");
+            ZipEntry entry;
+            while ((entry = zip.getNextEntry()) != null
+                    && output.length() < MAX_CHARS) {
+                String path = entry.getName();
+                if (!path.endsWith(".xml")) continue;
+                if (path.startsWith("word/") || path.startsWith("ppt/slides/")
+                        || path.startsWith("xl/sharedStrings")
+                        || path.startsWith("xl/worksheets/")) {
+                    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                    byte[] buffer = new byte[4096];
+                    int n;
+                    while ((n = zip.read(buffer)) != -1
+                            && bytes.size() < MAX_CHARS * 4) {
+                        bytes.write(buffer, 0, n);
+                    }
+                    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                    factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+                    factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+                    factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+                    Document doc = factory.newDocumentBuilder().parse(
+                            new java.io.ByteArrayInputStream(bytes.toByteArray()));
+                    NodeList nodes = doc.getElementsByTagName("t");
+                    if (nodes.getLength() == 0) nodes = doc.getElementsByTagName("v");
+                    for (int i = 0; i < nodes.getLength()
+                            && output.length() < MAX_CHARS; i++) {
+                        String value = nodes.item(i).getTextContent();
+                        if (value != null && !value.isEmpty()) {
+                            output.append(value).append(' ');
+                        }
+                    }
+                    output.append('\n');
+                }
+                zip.closeEntry();
+            }
+        }
+        return output.toString();
+    }
+}
