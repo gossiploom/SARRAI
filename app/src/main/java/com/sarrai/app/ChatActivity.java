@@ -2,6 +2,7 @@ package com.sarrai.app;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.widget.Toast;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -29,6 +30,12 @@ public class ChatActivity extends Activity {
     private boolean generating = false;
     private final List<String[]> conversationHistory = new ArrayList<>();
 
+    public static final String EXTRA_CONVERSATION_ID = "conversation_id";
+    private SarraiStore store;
+    private long conversationId = -1; // created lazily on first message
+    private ScrollView scrollView;
+    private TextView titleView;
+
     static {
         System.loadLibrary("sarrai");
     }
@@ -38,6 +45,11 @@ public class ChatActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        store = SarraiStore.get(this);
+        conversationId = getIntent().getLongExtra(EXTRA_CONVERSATION_ID, -1);
+        if (savedInstanceState != null) {
+            conversationId = savedInstanceState.getLong(EXTRA_CONVERSATION_ID, conversationId);
+        }
 
         getWindow().setStatusBarColor(Color.BLACK);
         getWindow().setNavigationBarColor(Color.BLACK);
@@ -65,7 +77,9 @@ public class ChatActivity extends Activity {
         titleBox.setPadding(dp(12), 0, 0, 0);
 
         TextView title = new TextView(this);
+        titleView = title;
         title.setText("SARRAI");
+        title.setSingleLine(true);
         title.setTextColor(text);
         title.setTextSize(20);
         title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
@@ -106,6 +120,7 @@ public class ChatActivity extends Activity {
         );
 
         ScrollView scroll = new ScrollView(this);
+        scrollView = scroll;
         scroll.setFillViewport(true);
 
         messages = new LinearLayout(this);
@@ -117,12 +132,26 @@ public class ChatActivity extends Activity {
                 dp(18)
         );
 
-        addMessage(
-                "Hello. I am SARRAI.\n\n"
-                        + "I am running locally on this device. "
-                        + "Send me a message to begin.",
-                false
-        );
+        SarraiStore.Conversation existing =
+                conversationId > 0 ? store.getConversation(conversationId) : null;
+        if (existing != null) {
+            title.setText(existing.title);
+            for (SarraiStore.Message m : store.getMessages(conversationId)) {
+                conversationHistory.add(new String[]{m.role, m.content});
+                addMessage(m.content, "user".equals(m.role));
+            }
+        } else {
+            conversationId = -1;
+        }
+        if (conversationHistory.isEmpty()) {
+            addMessage(
+                    "Hello. I am SARRAI.\n\n"
+                            + "I am running locally on this device. "
+                            + "Send me a message to begin.\n\n"
+                            + "Tip: say \"Remember my name is ...\" and I will keep it in memory.",
+                    false
+            );
+        }
 
         scroll.addView(messages);
 
@@ -197,6 +226,57 @@ public class ChatActivity extends Activity {
         root.addView(composer);
 
         setContentView(root);
+        scrollToBottom();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle out) {
+        super.onSaveInstanceState(out);
+        out.putLong(EXTRA_CONVERSATION_ID, conversationId);
+    }
+
+    private void ensureConversation(String firstMessage) {
+        if (conversationId > 0) return;
+        String t = firstMessage.replace('\n', ' ').trim();
+        if (t.length() > 40) t = t.substring(0, 40).trim() + "...";
+        conversationId = store.createConversation(t);
+        titleView.setText(t);
+    }
+
+    private void scrollToBottom() {
+        if (scrollView != null) scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
+    }
+
+    /** Handles explicit "remember"/"forget" requests locally. Returns true if handled. */
+    private boolean handleMemoryCommand(String message) {
+        String forget = ContextBuilder.parseForget(message);
+        String fact = forget == null ? ContextBuilder.parseRemember(message) : null;
+        if (forget == null && fact == null) return false;
+
+        ensureConversation(message);
+        store.addMessage(conversationId, "user", message);
+        addMessage(message, true);
+        input.setText("");
+
+        String reply;
+        if (forget != null) {
+            if ("*".equals(forget)) {
+                store.clearMemories();
+                reply = "Done. I have cleared all saved memories.";
+            } else {
+                int n = store.forgetMatching(forget);
+                reply = n > 0 ? "Done. I have forgotten " + n + " saved memor" + (n == 1 ? "y" : "ies") + " about \"" + forget + "\"."
+                        : "I don't have any saved memory about \"" + forget + "\".";
+            }
+        } else {
+            store.addMemory(fact);
+            reply = "Got it. I will remember: " + fact;
+        }
+        // Note: memory commands are saved to the chat log but not sent to the model as history.
+        store.addMessage(conversationId, "assistant", reply);
+        addMessage(reply, false);
+        Toast.makeText(this, "Memory updated", Toast.LENGTH_SHORT).show();
+        return true;
     }
 
     private void sendMessage(TextView sendButton) {
@@ -212,19 +292,22 @@ public class ChatActivity extends Activity {
             return;
         }
 
-        // Save and display the user's message immediately.
+        if (handleMemoryCommand(message)) {
+            return;
+        }
+
+        // Save (to disk) and display the user's message immediately.
+        ensureConversation(message);
+        store.addMessage(conversationId, "user", message);
         conversationHistory.add(new String[]{"user", message});
         addMessage(message, true);
         input.setText("");
 
-        // Snapshot the complete conversation for this inference request.
-        String[] roles = new String[conversationHistory.size()];
-        String[] contents = new String[conversationHistory.size()];
-
-        for (int i = 0; i < conversationHistory.size(); ++i) {
-            roles[i] = conversationHistory.get(i)[0];
-            contents[i] = conversationHistory.get(i)[1];
-        }
+        // Memories + rules + as much recent history as fits the 2048-token window.
+        String[][] built = ContextBuilder.build(store.listMemories(), conversationHistory);
+        String[] roles = built[0];
+        String[] contents = built[1];
+        final long convId = conversationId;
 
         generating = true;
         sendButton.setEnabled(false);
@@ -254,6 +337,7 @@ public class ChatActivity extends Activity {
                     conversationHistory.add(
                             new String[]{"assistant", finalResponse}
                     );
+                    store.addMessage(convId, "assistant", finalResponse);
                 }
 
                 addMessage(finalResponse, false);
@@ -312,7 +396,9 @@ public class ChatActivity extends Activity {
 
         bubble.setLayoutParams(params);
 
+        bubble.setTextIsSelectable(true);
         messages.addView(bubble);
+        scrollToBottom();
     }
 
     private void removeLastMessage() {
