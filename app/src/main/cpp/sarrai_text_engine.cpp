@@ -1,4 +1,4 @@
-#include "sarrai_text_engine.h"
+﻿#include "sarrai_text_engine.h"
 
 #include <android/log.h>
 #include <cstdint>
@@ -12,8 +12,11 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 namespace {
-    constexpr const char * MODEL_PATH =
+    constexpr const char * GEMMA_MODEL_PATH =
+        "/data/data/com.sarrai.app/files/gemma-3-1b-it-q4_0.gguf";
+    constexpr const char * QWEN_MODEL_PATH =
         "/data/data/com.sarrai.app/files/Qwen3-0.6B-Q4_0.gguf";
+    bool active_model_is_qwen = false;
 
     constexpr int32_t CONTEXT_SIZE = 2048;
     constexpr int32_t MAX_GENERATION_TOKENS = 256;
@@ -82,56 +85,61 @@ bool SarraiTextEngine::ensureLoaded() {
         backend_ready = true;
     }
 
-    llama_model_params model_params = llama_model_default_params();
-    model_params.n_gpu_layers = 0;
+    const char * model_paths[] = {
+        GEMMA_MODEL_PATH,
+        QWEN_MODEL_PATH
+    };
 
-    LOGI("Loading model: %s", MODEL_PATH);
+    for (const char * model_path : model_paths) {
+        LOGI("Attempting to load model: %s", model_path);
 
-    llama_model * model =
-        llama_model_load_from_file(MODEL_PATH, model_params);
+        llama_model_params model_params = llama_model_default_params();
+        model_params.n_gpu_layers = 0;
 
-    if (model == nullptr) {
-        LOGE("MODEL LOAD FAILED");
-        return false;
+        llama_model * model =
+            llama_model_load_from_file(model_path, model_params);
+
+        if (model == nullptr) {
+            LOGE("MODEL LOAD FAILED: %s", model_path);
+            continue;
+        }
+
+        llama_context_params ctx_params = llama_context_default_params();
+        ctx_params.n_ctx = CONTEXT_SIZE;
+        ctx_params.n_batch = CONTEXT_SIZE;
+        ctx_params.n_ubatch = 512;
+        ctx_params.n_threads = 4;
+        ctx_params.n_threads_batch = 4;
+
+        LOGI("Creating llama context for: %s", model_path);
+
+        llama_context * ctx = llama_init_from_model(model, ctx_params);
+        if (ctx == nullptr) {
+            LOGE("CONTEXT CREATION FAILED: %s", model_path);
+            llama_model_free(model);
+            continue;
+        }
+
+        const llama_vocab * vocab = llama_model_get_vocab(model);
+        if (vocab == nullptr) {
+            LOGE("VOCABULARY ACCESS FAILED: %s", model_path);
+            llama_free(ctx);
+            llama_model_free(model);
+            continue;
+        }
+
+        model_ = model;
+        context_ = ctx;
+        vocab_ = const_cast<llama_vocab *>(vocab);
+        active_model_is_qwen = (std::string(model_path) == QWEN_MODEL_PATH);
+
+        LOGI("MODEL, CONTEXT AND VOCABULARY READY: %s", model_path);
+        return true;
     }
 
-    llama_context_params ctx_params = llama_context_default_params();
-    ctx_params.n_ctx = CONTEXT_SIZE;
-    ctx_params.n_batch = CONTEXT_SIZE;
-    ctx_params.n_ubatch = 512;
-    ctx_params.n_threads = 4;
-    ctx_params.n_threads_batch = 4;
-
-    LOGI("Creating llama context");
-
-    llama_context * ctx =
-        llama_init_from_model(model, ctx_params);
-
-    if (ctx == nullptr) {
-        LOGE("CONTEXT CREATION FAILED");
-        llama_model_free(model);
-        return false;
-    }
-
-    const llama_vocab * vocab =
-        llama_model_get_vocab(model);
-
-    if (vocab == nullptr) {
-        LOGE("VOCABULARY ACCESS FAILED");
-        llama_free(ctx);
-        llama_model_free(model);
-        return false;
-    }
-
-    model_ = model;
-    context_ = ctx;
-    vocab_ = const_cast<llama_vocab *>(vocab);
-
-    LOGI("MODEL, CONTEXT AND VOCABULARY READY");
-
-    return true;
+    LOGE("ALL MODEL LOAD ATTEMPTS FAILED");
+    return false;
 }
-
 std::string SarraiTextEngine::generate(
     const std::vector<std::pair<std::string, std::string>>& messages) {
 
@@ -168,10 +176,10 @@ std::string SarraiTextEngine::generate(
 
     for (size_t i = 0; i < messages.size(); ++i) {
         content_storage.push_back(messages[i].second);
-
-        // Qwen3 supports /no_think to avoid the long reasoning block.
-        // Apply it only to the latest user message.
-        if (i == messages.size() - 1 && messages[i].first == "user") {
+        // Only Qwen3 uses /no_think; do not add it to Gemma prompts.
+        if (active_model_is_qwen &&
+            i == messages.size() - 1 &&
+            messages[i].first == "user") {
             content_storage.back() += " /no_think";
         }
 
@@ -407,3 +415,4 @@ std::string SarraiTextEngine::generate(
 
     return response;
 }
+
